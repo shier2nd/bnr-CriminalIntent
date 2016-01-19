@@ -171,4 +171,27 @@ public class CrimeFragment extends Fragment {
     private void updateTime() {
         mTimeButton.setText(DateFormat.format("HH:mm", mCrime.getDate()));
     }
+
+    private String getCrimeReport() {
+        String solvedString = null;
+        if (mCrime.isSolved()) {
+            solvedString = getString(R.string.crime_report_solved);
+        } else {
+            solvedString = getString(R.string.crime_report_unsolved);
+        }
+
+        String dateFormat = "EEE, MMM dd";
+        String dateString = DateFormat.format(dateFormat, mCrime.getDate()).toString();
+
+        String suspectString = mCrime.getSuspect();
+        if (suspectString == null) {
+            suspectString = getString(R.string.crime_report_no_suspect);
+        } else {
+            suspectString = getString(R.string.crime_report_suspect);
+        }
+
+        String report = getString(R.string.crime_report, mCrime.getTitle(), dateString, solvedString, suspectString);
+
+        return report;
+    }
 }
