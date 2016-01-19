@@ -2,6 +2,7 @@ package com.bignerdranch.android.criminalintent;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -136,6 +137,8 @@ public class CrimeFragment extends Fragment {
         });
 
         final Intent pickContact = new Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI);
+        // Dummy code to verify filter
+//        pickContact.addCategory(Intent.CATEGORY_HOME);
         mSuspectButton = (Button)v.findViewById(R.id.crime_suspect);
         mSuspectButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -146,6 +149,13 @@ public class CrimeFragment extends Fragment {
 
         if (mCrime.getSuspect() != null) {
             mSuspectButton.setText(mCrime.getSuspect());
+        }
+
+        PackageManager packageManager = getActivity().getPackageManager();
+        // By calling resolveActivity(Intent, int),
+        // you ask to find an activity that matches the Intent you gave it.
+        if (packageManager.resolveActivity(pickContact, PackageManager.MATCH_DEFAULT_ONLY) == null) {
+            mSuspectButton.setEnabled(false);
         }
 
         return v;
@@ -239,8 +249,7 @@ public class CrimeFragment extends Fragment {
             solvedString = getString(R.string.crime_report_unsolved);
         }
 
-        String dateFormat = "EEE, MMM dd";
-        String dateString = DateFormat.format(dateFormat, mCrime.getDate()).toString();
+        String dateString = DateFormat.format("EEE, MMM dd", mCrime.getDate()).toString();
 
         String suspectString = mCrime.getSuspect();
         if (suspectString == null) {
