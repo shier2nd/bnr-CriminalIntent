@@ -31,7 +31,6 @@ public class CrimeListFragment extends Fragment {
     private CrimeAdapter mAdapter;
     private LinearLayout mNoCrimesView;
     private Button mNewCrimeButton;
-//    private int mPressedPosition;
     private boolean mSubtitleVisible;
 
     @Override
@@ -119,7 +118,6 @@ public class CrimeListFragment extends Fragment {
         if (mSubtitleVisible) {
             CrimeLab crimeLab = CrimeLab.get(getActivity());
             int crimeCount = crimeLab.getCrimes().size();
-//            subtitle = getString(R.string.subtitle_format, crimeCount);
             subtitle = getResources().getQuantityString(R.plurals.subtitle_plurals, crimeCount, crimeCount);
         }
 
@@ -128,8 +126,8 @@ public class CrimeListFragment extends Fragment {
     }
 
     private void updateUI() {
-        CrimeLab crimeLab = CrimeLab.get(getActivity());
-        List<Crime> crimes = crimeLab.getCrimes();
+        CrimeLab crimeLab = CrimeLab.get(getActivity());    //The List<Crime> returned by getCrimes() is a
+        List<Crime> crimes = crimeLab.getCrimes();          //snapshot of the Crimes at one point in time.
 
         if (crimes.size() < 1) {
             mNoCrimesView.setVisibility(View.VISIBLE);
@@ -142,8 +140,8 @@ public class CrimeListFragment extends Fragment {
                 mAdapter = new CrimeAdapter(crimes);
                 mCrimeRecyclerView.setAdapter(mAdapter);
             } else {
+                mAdapter.setCrimes(crimes);
                 mAdapter.notifyDataSetChanged();
-//            mAdapter.notifyItemChanged(mPressedPosition);
             }
         }
 
@@ -162,7 +160,6 @@ public class CrimeListFragment extends Fragment {
         public void bindCrime(Crime crime) {
             mCrime = crime;
             mTitleTextView.setText(mCrime.getTitle());
-//            mDateTextView.setText(mCrime.getDate().toString()); //need to modify
             mDateTextView.setText(DateFormat.format("EEEE, MMM d, yyyy @ HH:mm", mCrime.getDate()));
             mSolvedCheckBox.setChecked(mCrime.isSolved());
         }
@@ -178,7 +175,6 @@ public class CrimeListFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-//            mPressedPosition = mCrimeRecyclerView.getChildAdapterPosition(v);
             Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
             startActivity(intent);
         }
@@ -208,6 +204,10 @@ public class CrimeListFragment extends Fragment {
         @Override
         public int getItemCount() {
             return mCrimes.size();
+        }
+
+        public void setCrimes(List<Crime> crimes) {
+            mCrimes = crimes;
         }
     }
 }
