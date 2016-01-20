@@ -195,7 +195,7 @@ public class CrimeFragment extends Fragment {
             return;
         }
 
-        if (requestCode == REQUEST_DATE && requestCode == REQUEST_TIME) {
+        if (requestCode == REQUEST_DATE || requestCode == REQUEST_TIME) {
             Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
             mCrime.setDate(date);
 
