@@ -48,6 +48,7 @@ public class CrimeFragment extends Fragment {
     private CheckBox mSolvedCheckBox;
     private Button mReportButton;
     private Button mSuspectButton;
+    private Button mDialButton;
 
     public static CrimeFragment newInstance(UUID crime_id) {
         Bundle args = new Bundle();
@@ -142,23 +143,33 @@ public class CrimeFragment extends Fragment {
         // Dummy code to verify filter
 //        pickContact.addCategory(Intent.CATEGORY_HOME);
         mSuspectButton = (Button)v.findViewById(R.id.crime_suspect);
-        mSuspectButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivityForResult(pickContact, REQUEST_CONTACT);
-            }
-        });
-
-        if (mCrime.getSuspect() != null) {
-            mSuspectButton.setText(mCrime.getSuspect());
-        }
-
         PackageManager packageManager = getActivity().getPackageManager();
         // By calling resolveActivity(Intent, int),
         // you ask to find an activity that matches the Intent you gave it.
         if (packageManager.resolveActivity(pickContact, PackageManager.MATCH_DEFAULT_ONLY) == null) {
             mSuspectButton.setEnabled(false);
+        } else {
+            mSuspectButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivityForResult(pickContact, REQUEST_CONTACT);
+                }
+            });
+            if (mCrime.getSuspectName() != null) {
+                mSuspectButton.setText(mCrime.getSuspectName());
+            }
         }
+
+        mDialButton = (Button)v.findViewById(R.id.crime_dial);
+        ifSuspectHasPhoneNumber();
+        mDialButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(Intent.ACTION_DIAL);
+                i.setData(Uri.parse("tel:" + mCrime.getSuspectPhone()));
+                startActivity(i);
+            }
+        });
 
         return v;
     }
@@ -195,7 +206,7 @@ public class CrimeFragment extends Fragment {
             return;
         }
 
-        if (requestCode == REQUEST_DATE && requestCode == REQUEST_TIME) {
+        if (requestCode == REQUEST_DATE || requestCode == REQUEST_TIME) {
             Date date = (Date) data.getSerializableExtra(DatePickerFragment.EXTRA_DATE);
             mCrime.setDate(date);
 
@@ -210,27 +221,62 @@ public class CrimeFragment extends Fragment {
         } else if (requestCode == REQUEST_CONTACT && data != null) {
             Uri contactUri = data.getData();
             // Specify which fields you want your query to return values for.
-            String[] queryFields = new String[] {
-                    ContactsContract.Contacts.DISPLAY_NAME
+            String[] contactsProjection = new String[] {
+                    ContactsContract.Contacts.DISPLAY_NAME,
+                    ContactsContract.Contacts.HAS_PHONE_NUMBER,
+                    ContactsContract.Contacts._ID
             };
             // Perform your query - the contactUri is like a "where" clause here
-            Cursor c = getActivity().getContentResolver()
-                    .query(contactUri, queryFields, null, null, null);
+            Cursor contactCursor = getActivity().getContentResolver()
+                    .query(contactUri, contactsProjection, null, null, null);
 
             try {
                 // Double-check that you actually got results
-                if (c.getCount() == 0) {
+                if (contactCursor.getCount() == 0) {
                     return;
                 }
 
                 // Pull out the first column of the first row of the data -
                 // that is your suspect's name.
-                c.moveToFirst();
-                String suspect = c.getString(0);
-                mCrime.setSuspect(suspect);
-                mSuspectButton.setText(suspect);
+                contactCursor.moveToFirst();
+                String suspectName = contactCursor.getString(0);
+                mCrime.setSuspectName(suspectName);
+                mSuspectButton.setText(suspectName);
+
+                boolean hasPhoneNumber = (contactCursor.getInt(1) == 1);
+                if (!hasPhoneNumber) {
+                    mDialButton.setEnabled(false);
+                } else{
+                    String suspectIdString = String.valueOf(contactCursor.getLong(2));
+                    Uri phoneUri = ContactsContract.CommonDataKinds.Phone.CONTENT_URI;
+                    String[] phoneProjection = new String[] {
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
+                            ContactsContract.CommonDataKinds.Phone.NUMBER
+                    };
+                    Cursor phoneCursor = getActivity().getContentResolver().query(
+                            phoneUri,
+                            phoneProjection,
+                            phoneProjection[0] + " = ?",
+                            new String[] { suspectIdString },
+                            null
+                    );
+
+                    try {
+                        if (phoneCursor.getCount() == 0) {
+                            return;
+                        }
+
+                        phoneCursor.moveToFirst();
+                        String suspectPhoneNumber = phoneCursor.getString(1);
+                        mCrime.setSuspectPhone(suspectPhoneNumber);
+                        ifSuspectHasPhoneNumber();
+                    } finally {
+                        phoneCursor.close();
+                    }
+                }
+
             } finally {
-                c.close();
+                contactCursor.close();
             }
         }
     }
@@ -253,7 +299,7 @@ public class CrimeFragment extends Fragment {
 
         String dateString = DateFormat.format("EEE, MMM dd", mCrime.getDate()).toString();
 
-        String suspectString = mCrime.getSuspect();
+        String suspectString = mCrime.getSuspectName();
         if (suspectString == null) {
             suspectString = getString(R.string.crime_report_no_suspect);
         } else {
@@ -263,5 +309,13 @@ public class CrimeFragment extends Fragment {
         String report = getString(R.string.crime_report, mCrime.getTitle(), dateString, solvedString, suspectString);
 
         return report;
+    }
+
+    private void ifSuspectHasPhoneNumber() {
+        if (mCrime.getSuspectPhone() == null) {
+            mDialButton.setEnabled(false);
+        } else {
+            mDialButton.setEnabled(true);
+        }
     }
 }

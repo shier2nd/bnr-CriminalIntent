@@ -12,7 +12,8 @@ public class Crime {
     private String mTitle;
     private Date mDate;
     private boolean mSolved;
-    private String mSuspect;
+    private String mSuspectName;
+    private String mSuspectPhone;
 
     public Crime() {
         this(UUID.randomUUID());
@@ -51,11 +52,19 @@ public class Crime {
         mSolved = solved;
     }
 
-    public String getSuspect() {
-        return mSuspect;
+    public String getSuspectName() {
+        return mSuspectName;
     }
 
-    public void setSuspect(String suspect) {
-        mSuspect = suspect;
+    public void setSuspectName(String suspectName) {
+        mSuspectName = suspectName;
+    }
+
+    public String getSuspectPhone() {
+        return mSuspectPhone;
+    }
+
+    public void setSuspectPhone(String suspectPhone) {
+        mSuspectPhone = suspectPhone;
     }
 }
