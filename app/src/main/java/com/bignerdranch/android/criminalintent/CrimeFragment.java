@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
@@ -21,6 +22,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -52,6 +54,7 @@ public class CrimeFragment extends Fragment {
 
     private Crime mCrime;
     private File mPhotoFile;
+    private Point mPhotoViewSize;
     private EditText mTitleFields;
     private Button mDateButton;
     private Button mTimeButton;
@@ -176,7 +179,7 @@ public class CrimeFragment extends Fragment {
         mPhotoButton = (ImageButton) v.findViewById(R.id.crime_camera);
         final Intent captureImage = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        boolean canTakePhoto = mPhotoFile != null && captureImage.resolveActivity(packageManager) != null;
+        boolean canTakePhoto = (mPhotoFile != null && captureImage.resolveActivity(packageManager) != null);
         mPhotoButton.setEnabled(canTakePhoto);
 
         if (canTakePhoto) {
@@ -192,7 +195,17 @@ public class CrimeFragment extends Fragment {
         });
 
         mPhotoView = (ImageView) v.findViewById(R.id.crime_photo);
-        updatePhotoView();
+        ViewTreeObserver observer = mPhotoView.getViewTreeObserver();
+        observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                mPhotoViewSize = new Point();
+                mPhotoViewSize.set(mPhotoView.getWidth(), mPhotoView.getHeight());
+
+                updatePhotoView();
+                mPhotoView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+            }
+        });
         mPhotoView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -324,7 +337,12 @@ public class CrimeFragment extends Fragment {
         if (mPhotoFile == null || !mPhotoFile.exists()) {
             mPhotoView.setImageDrawable(null);
         } else {
-            Bitmap bitmap = PictureUtils.getScaledBitmap(mPhotoFile.getPath(), getActivity());
+            Bitmap bitmap;
+            if (mPhotoViewSize == null) {
+                bitmap = PictureUtils.getScaledBitmap(mPhotoFile.getPath(), getActivity());
+            } else {
+                bitmap = PictureUtils.getScaledBitmap(mPhotoFile.getPath(), mPhotoViewSize.x, mPhotoViewSize.y);
+            }
             mPhotoView.setImageBitmap(bitmap);
         }
     }
