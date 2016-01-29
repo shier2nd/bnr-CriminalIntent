@@ -9,6 +9,8 @@
 
     <string name="date_piker_title">Date of crime</string>
     <string name="time_piker_title">Time of crime</string>
+    <string name="suspect_image_title">Suspect detail display</string>
+    <string name="delete_image">Delete image</string>
 
     <string name="new_crime">New Crime</string>
     <string name="delete_crime">Delete Crime</string>

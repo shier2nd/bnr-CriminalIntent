@@ -39,13 +39,16 @@ import java.util.UUID;
 public class CrimeFragment extends Fragment {
 
     private static final String ARG_CRIME_ID = "crime_id";
+
     private static final String DIALOG_DATE = "DialogDate";
     private static final String DIALOG_TIME = "DialogTime";
+    private static final String DIALOG_SUSPECT_IMAGE = "DialogSuspectImage";
 
     private static final int REQUEST_DATE = 0;
     private static final int REQUEST_TIME = 1;
     private static final int REQUEST_CONTACT = 2;
     private static final int REQUEST_PHOTO = 3;
+    private static final int REQUEST_IMAGE = 4;
 
     private Crime mCrime;
     private File mPhotoFile;
@@ -190,6 +193,17 @@ public class CrimeFragment extends Fragment {
 
         mPhotoView = (ImageView) v.findViewById(R.id.crime_photo);
         updatePhotoView();
+        mPhotoView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mPhotoFile != null && mPhotoFile.exists()) {
+                    FragmentManager manager = getFragmentManager();
+                    SuspectImageFragment dialog = SuspectImageFragment.newInstance(mPhotoFile);
+                    dialog.setTargetFragment(CrimeFragment.this, REQUEST_IMAGE);
+                    dialog.show(manager, DIALOG_SUSPECT_IMAGE);
+                }
+            }
+        });
 
         return v;
     }
@@ -213,6 +227,9 @@ public class CrimeFragment extends Fragment {
             case R.id.menu_item_delete_crime:
                 Toast.makeText(getActivity(), R.string.toast_delete_crime, Toast.LENGTH_SHORT).show();
                 CrimeLab.get(getActivity()).deleteCrime(mCrime);
+                if (mPhotoFile != null && mPhotoFile.exists()) {
+                    mPhotoFile.delete();
+                }
                 getActivity().finish();
                 return true;
             default:
@@ -265,6 +282,11 @@ public class CrimeFragment extends Fragment {
             }
         } else if(requestCode == REQUEST_PHOTO) {
             updatePhotoView();
+        } else if (requestCode == REQUEST_IMAGE) {
+            boolean isFileDelete = mPhotoFile.delete();
+            if (isFileDelete) {
+                updatePhotoView();
+            }
         }
     }
 
