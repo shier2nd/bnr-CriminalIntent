@@ -1,6 +1,6 @@
 package com.bignerdranch.android.criminalintent;
 
-import android.content.Intent;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
@@ -32,6 +32,20 @@ public class CrimeListFragment extends Fragment {
     private LinearLayout mNoCrimesView;
     private Button mNewCrimeButton;
     private boolean mSubtitleVisible;
+    private Callbacks mCallbacks;
+
+    /**
+     * Required interface for hosting activities.
+     */
+    public interface Callbacks {
+        void onCrimeSelected(Crime crime);
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mCallbacks = (Callbacks) context;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -77,6 +91,12 @@ public class CrimeListFragment extends Fragment {
     }
 
     @Override
+    public void onDetach() {
+        super.onDetach();
+        mCallbacks = null;
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.fragment_crime_list, menu);
@@ -108,8 +128,8 @@ public class CrimeListFragment extends Fragment {
     private void newCrime() {
         Crime crime = new Crime();
         CrimeLab.get(getActivity()).addCrime(crime);
-        Intent intent = CrimePagerActivity.newIntent(getActivity(), crime.getId());
-        startActivity(intent);
+        mCallbacks.onCrimeSelected(crime);
+        updateUI();
     }
 
     private void updateSubtitle() {
@@ -125,7 +145,7 @@ public class CrimeListFragment extends Fragment {
         activity.getSupportActionBar().setTitle(subtitle);
     }
 
-    private void updateUI() {
+    public void updateUI() {
         CrimeLab crimeLab = CrimeLab.get(getActivity());    //The List<Crime> returned by getCrimes() is a
         List<Crime> crimes = crimeLab.getCrimes();          //snapshot of the Crimes at one point in time.
 
@@ -160,7 +180,7 @@ public class CrimeListFragment extends Fragment {
         public void bindCrime(Crime crime) {
             mCrime = crime;
             mTitleTextView.setText(mCrime.getTitle());
-            mDateTextView.setText(DateFormat.format("EEEE, MMM d, yyyy @ HH:mm", mCrime.getDate()));
+            mDateTextView.setText(DateFormat.format("EEEE, MMM dd, yyyy @ HH:mm", mCrime.getDate()));
             mSolvedCheckBox.setChecked(mCrime.isSolved());
         }
 
@@ -175,8 +195,7 @@ public class CrimeListFragment extends Fragment {
 
         @Override
         public void onClick(View v) {
-            Intent intent = CrimePagerActivity.newIntent(getActivity(), mCrime.getId());
-            startActivity(intent);
+            mCallbacks.onCrimeSelected(mCrime);
         }
     }
 
